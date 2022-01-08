@@ -28,7 +28,7 @@ namespace udt {
 /// extended by the `NLPacket` class which applies a structured payload and is used as the "default" packet for Vircadia.
 ///
 /// ```
-///                              Packet Header Format:
+///                              Packet Format:
 ///
 ///     0                   1                   2                   3
 ///     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1

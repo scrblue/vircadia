@@ -21,30 +21,74 @@
 #include "Packet.h"
 
 namespace udt {
-    
+
+///
+/// The `ControlPacket` extends the `BasePacket` and provides a schema for confirming connections and acknowledging the receipt
+/// ```
+///                               ControlPacket Format:
+///     0                   1                   2                   3
+///     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+///    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+///    |C|           Type              |          (unused)             |
+///    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+///    |                          Control Data                         |
+///    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// ```
+/// C: Control bit -- this is always 1 in `ControlPacket`s
+
 class ControlPacket : public BasePacket {
     Q_OBJECT
 public:
+    ///
+    /// The ControlBit and Type take up the first 16 bits of the `ControlPacket` as per the diagram for the `ControlPacket`
+    /// 
     using ControlBitAndType = uint32_t;
-    
+
+    ///
+    /// The type of `ControlPacket` represented as an enum with members `ACK`, `Handshake`, `HandshakeACK`, and
+    /// `HandshakeRequest`
+    /// 
     enum Type : uint16_t {
         ACK,
         Handshake,
         HandshakeACK,
         HandshakeRequest
     };
-    
+
+    ///
+    /// Create a new `ControlPacket` from a given type and control data size.
+    /// 
     static std::unique_ptr<ControlPacket> create(Type type, qint64 size = -1);
+
+    ///
+    /// Create a new `ControlPacket`, moving the contents from the given bytearray
+    /// 
     static std::unique_ptr<ControlPacket> fromReceivedPacket(std::unique_ptr<char[]> data, qint64 size,
                                                              const SockAddr& senderSockAddr);
-    // Current level's header size
+
+    ///
+    /// Get the current level's header size
+    /// 
     static int localHeaderSize();
-    // Cumulated size of all the headers
+
+    ///
+    /// Get the cumulated size of all the headers
+    /// 
     static int totalHeaderSize();
-    // The maximum payload size this packet can use to fit in MTU
+
+    ///
+    /// Get the maximum payload size this packet can use to fit in MTU
+    /// 
     static int maxPayloadSize();
-    
+
+    ///
+    /// Get the `Type` of this `ControlPacket`
+    /// 
     Type getType() const { return _type; }
+
+    ///
+    /// Set the `Type` of this `ControlPacket`
+    /// 
     void setType(Type type);
     
 private:
