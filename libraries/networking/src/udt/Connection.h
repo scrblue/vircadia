@@ -46,36 +46,117 @@ private:
     Packet::MessagePartNumber _nextPartNumber = 0;
 };
 
+///
+/// A `Connection` manages a single network connection for sending and receiving reliable packets
+/// 
 class Connection : public QObject {
     Q_OBJECT
 public:
+    ///
+    /// By dealing with reliable packets, the `Connection` will have to reckon with `ControlPacket`s which are sent and received
+    /// to acknowledge a reliably sent packet 
+    /// 
     using ControlPacketPointer = std::unique_ptr<ControlPacket>;
-    
+
+    ///
+    /// Basic constructor creating a `Connection` between the `parentSocket` and the `destination`
+    /// 
     Connection(Socket* parentSocket, SockAddr destination, std::unique_ptr<CongestionControl> congestionControl);
+
+    ///
+    /// Basic deconstructor which stops the thread handling the `sendQueue` and fails any pending, but received messages
+    /// 
     virtual ~Connection();
 
+    ///
+    /// Simply add the add the `Packet` to the end of the `sendQueue`
+    /// 
     void sendReliablePacket(std::unique_ptr<Packet> packet);
+
+    ///
+    /// Simply add the append the `PacketList` to the end of the `sendQueue`
+    /// 
     void sendReliablePacketList(std::unique_ptr<PacketList> packet);
 
-    void sync(); // rate control method, fired by Socket for all connections on SYN interval
+    ///
+    /// This is a rate control method, fired by Socket for all connections on SYN interval. NOP by default.
+    /// 
+    void sync(); 
 
-    // return indicates if this packet should be processed
+    ///
+    /// Reads the given `SequenceNumber` and returns a `bool` indicating if this packet should be processed
+    /// 
     bool processReceivedSequenceNumber(SequenceNumber sequenceNumber, int packetSize, int payloadSize);
+
+    /// Routes the given `ControlPacketPointer` to internal handlers based on type.
+    ///
+    /// The handshake process is in the following sequence: Send a `HandshakeRequest` from client to server, then form the
+    /// `Connection`. Once the  `Connection` has formed, the server sends a `Handshake` to the client. Finally the client sends
+    /// a `HandshakeACK` back. After the handshake process is complete, `ControlPacket`s are used to acknowledge the receipt of
+    /// reliably sent packets with the `ACK` variant.
+    ///
+    /// NOTE: `ControlPacket`s other than `Handshake` or `HandshakeACK` will not be processed if a handshake has not been
+    /// completed.
+    /// 
+    /// For `ACK` packets, this will simply update internal trackers on counts of `ACK` and the last SequenceNumber
+    /// acknowledged. It ensures that the entire handshake process has already occured for this to do anything.
+    /// 
+    /// For `Handshake` packets, this sets an initial SequenceNumber, sends a `HandshakeACK`, and updates an internal tracker
+    /// on whether the `Handshake` has taken place. `Handshake`s are from server to client.
+    ///
+    /// For `HandshakeACK` packets, thiis also sets an initial SequenceNumber and updates the internal tracker  on whether the
+    /// handshake process has taken place. `HandshakeACK`s are from client to server.
+    ///
+    /// For `HandshakeRequest`s, this resets the connection. It ensures that the entire handshake process has already occured
+    /// for this to do anything.
+    /// 
     void processControl(ControlPacketPointer controlPacket);
 
+    ///
+    /// Places the received message packet in the right spot of the queue depending on the `Packet`'s position in the message.
+    /// Queued messages are simply passed to the `Socket::MessageHandler` function of the `Connection`'s `Socket` once complete.
+    /// 
     void queueReceivedMessagePacket(std::unique_ptr<Packet> packet);
-    
+
+    ///
+    /// Reads a sample of the `ConnectionStats` collected from this one `Connection`
+    /// 
     ConnectionStats::Stats sampleStats() { return _stats.sample(); }
 
+    ///
+    /// Simply returns the `SockAddr` of the destination of this `Connection`
+    /// 
     SockAddr getDestination() const { return _destination; }
 
+    /// Simply sets the maximmum bandwidth use of the `Connection`'s `CongestionControl`
     void setMaxBandwidth(int maxBandwidth);
 
+    /// Starts the handshake process from the side of the client by creating a `HandshakeRequest` `ControlPacket` and writing that
+    /// to the `Connection`'s `Socket`
     void sendHandshakeRequest();
+
+    ///
+    /// Whether the handshake process has been completed
+    /// 
     bool hasReceivedHandshake() const { return _hasReceivedHandshake; }
-    
+
+    ///
+    /// Record the sending of an unreliable packet to the internal `ConnectionStats` member.
+    /// 
+    /// NOTE: This doesn't actually send any packets.
+    /// 
     void recordSentUnreliablePackets(int wireSize, int payloadSize);
+
+    ///
+    /// Record the receipt of an unreliable packet to the internal `ConnectionStats` member.
+    /// 
+    /// NOTE: This doesn't handle any packets.
+    /// 
     void recordReceivedUnreliablePackets(int wireSize, int payloadSize);
+
+    ///
+    /// Simply set the destination `SockAddr`
+    /// 
     void setDestinationAddress(const SockAddr& destination);
 
 signals:
