@@ -46,8 +46,12 @@ private:
     Packet::MessagePartNumber _nextPartNumber = 0;
 };
 
-///
-/// A `Connection` manages a single network connection for sending and receiving reliable packets
+
+/// @addtogroup udt
+/// @{
+
+/// A `Connection` manages a single network connection for sending and receiving reliable packets. It and other `Connection`s
+/// are managed by a `Socket`
 /// 
 class Connection : public QObject {
     Q_OBJECT
@@ -215,6 +219,8 @@ private:
 
     ConnectionStats _stats;
 };
+
+/// @}
     
 }
 

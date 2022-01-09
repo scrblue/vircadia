@@ -22,6 +22,8 @@
 #include "SequenceNumber.h"
 
 namespace udt {
+/// @addtogroup udt
+/// @{
 
 ///
 /// The `Packet` is the basic Vircadia protocol packet. It extends the `BasePacket` with an explicit header format. It is
@@ -226,6 +228,8 @@ private:
     mutable MessagePartNumber _messagePartNumber { 0 };
 };
 
+
+/// @}
 } // namespace udt
 
 Q_DECLARE_METATYPE(udt::Packet*);

@@ -24,6 +24,9 @@
 #include "../ExtendedIODevice.h"
 
 namespace udt {
+/// @defgroup udt
+/// @ingroup Networking
+/// @{
 
 ///
 /// The `BasePacket` class is a simple packet type for which Vircadia packet classes extend. A `BasePacket` by itself is
@@ -206,7 +209,8 @@ protected:
 
     p_high_resolution_clock::time_point _receiveTime; // captures the time the packet received (only used on receiving end)
 };
-    
+
+/// @}
 } // namespace udt
 
 

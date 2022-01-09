@@ -21,6 +21,8 @@
 #include "Packet.h"
 
 namespace udt {
+/// @addtogroup udt
+/// @{
 
 ///
 /// The `ControlPacket` extends the `BasePacket` and provides a schema for confirming connections and acknowledging the receipt
@@ -105,7 +107,8 @@ private:
     
     Type _type;
 };
-    
+
+/// @}
 } // namespace udt
 
 

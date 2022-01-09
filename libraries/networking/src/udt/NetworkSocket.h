@@ -21,7 +21,7 @@
 #include "../webrtc/WebRTCSocket.h"
 #endif
 
-/// @addtogroup Networking
+/// @addtogroup udt
 /// @{
 
 
