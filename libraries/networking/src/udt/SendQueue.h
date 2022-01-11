@@ -40,34 +40,82 @@ class ControlPacket;
 class Packet;
 class PacketList;
 class Socket;
-    
+
+/// @addtogroup udt
+/// @{
+
+///
+/// The `SendQueue` is built on top of the `PacketQueue` and `Socket` and is used to queue and send `Packet`s and `PacketList`s reliably.
+/// See `PacketQueue` for information on how `Packet`s are dequeued.
+/// 
 class SendQueue : public QObject {
     Q_OBJECT
     
 public:
+    ///
+    /// The `SendQueue` has a simple selection of states: `NotStarted`, `Running`, and `Stopped`. This is checked internally on
+    /// most methods.
+    /// 
     enum class State {
         NotStarted,
         Running,
         Stopped
     };
-    
+
+    ///
+    /// Creates a `SendQueue` and sets up a thread for it to run on
+    /// 
     static std::unique_ptr<SendQueue> create(Socket* socket, SockAddr destination,
                                              SequenceNumber currentSequenceNumber, MessageNumber currentMessageNumber,
                                              bool hasReceivedHandshakeACK);
-
+    ///
+    /// Does nothing
+    /// 
     virtual ~SendQueue();
-    
+
+    ///
+    /// Moves the `Packet` into the queue, while also starting the thread if it is not already running
+    /// 
     void queuePacket(std::unique_ptr<Packet> packet);
+
+    ///
+    /// Moves the `PacketList` into a new channel in the queue, while also starting the thread if it is not already running
+    /// 
     void queuePacketList(std::unique_ptr<PacketList> packetList);
 
+    ///
+    /// Returns the `SequenceNumber` of the last sent packet. Sequence numbers are automatically assigned, so this number will
+    /// increase (wrapping around to 0) as long as `Packet`s are being sent.
+    /// 
     SequenceNumber getCurrentSequenceNumber() const { return SequenceNumber(_atomicCurrentSequenceNumber); }
+
+    ///
+    /// Returns the `MessageNumber` of the last sent packet. Message numbers are automatically assigned, so this number will
+    /// increase (wrapping around to 0) as long as messages are being sent.
+    /// 
+    /// NOTE: Not all `Packet`s are messages.
+    /// 
     MessageNumber getCurrentMessageNumber() const { return _packets.getCurrentMessageNumber(); }
-    
+
+    ///
+    /// Sets the "flow window size" which determines the number of unacknowledged `Packet`s that may be sent.
+    /// 
     void setFlowWindowSize(int flowWindowSize) { _flowWindowSize = flowWindowSize; }
-    
+
+    ///
+    /// Gets the period at which `Packet`s are dequeued and sent in microseconds.
+    ///
     int getPacketSendPeriod() const { return _packetSendPeriod; }
+
+    ///
+    /// Sets the period at which `Packet`s are dequeued and sent in microseconds.
+    ///
     void setPacketSendPeriod(int newPeriod) { _packetSendPeriod = newPeriod; }
-    
+
+    ///
+    /// Sets the timeout period in which to wait for a response in microseconds. If this timeout period is exceeded, the thread
+    /// will stop.
+    /// 
     void setEstimatedTimeout(int estimatedTimeout) { _estimatedTimeout = estimatedTimeout; }
     
 public slots:
@@ -145,7 +193,9 @@ private:
     static const std::chrono::microseconds MAXIMUM_ESTIMATED_TIMEOUT;
     static const std::chrono::microseconds MINIMUM_ESTIMATED_TIMEOUT;
 };
-    
+
+/// @}
+
 }
     
 #endif // hifi_SendQueue_h
